@@ -14,39 +14,41 @@ import (
 func (app *application) enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (app *application) checkToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
 		w.Header().Add("Vary", "Authorization")
 
-		authHeader := r.Header.Get("Authorizaiton")
+		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
-			// set for anonymous user
+			//Anonymous user
 		}
 
-		headerParts := strings.Split(authHeader, " ")
+		headerPart := strings.Split(authHeader, " ")
 
-		if len(headerParts) != 2 {
+		if len(headerPart) != 2 {
+			app.logger.Println("error :" + authHeader)
 			app.errorJSON(w, errors.New("Invalid auth header"))
 			return
 		}
 
-		if headerParts[0] != "Bearer" {
+		if headerPart[0] != "Bearer" {
 			app.errorJSON(w, errors.New("Unauthorized - no bearer"))
 			return
 		}
 
-		token := headerParts[1]
+		token := headerPart[1]
+
 		claims, err := jwt.HMACCheck([]byte(token), []byte(app.config.jwt.secret))
 
 		if err != nil {
-			app.errorJSON(w, errors.New("Unauthorized - failed hmac check"))
+			app.errorJSON(w, errors.New("Unauthorized - failed HMACCheck"))
 			return
 		}
 
@@ -68,11 +70,11 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 		userID, err := strconv.ParseInt(claims.Subject, 10, 64)
 
 		if err != nil {
-			app.errorJSON(w, errors.New("Unauthorized "))
+			app.errorJSON(w, errors.New("Unauthorized - Unauthorized"))
 			return
 		}
 
-		log.Println("Valid User :", userID)
+		log.Println(userID)
 
 		next.ServeHTTP(w, r)
 	})
