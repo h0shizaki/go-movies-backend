@@ -33,7 +33,7 @@ func (app *application) checkToken(next http.Handler) http.Handler {
 		headerPart := strings.Split(authHeader, " ")
 
 		if len(headerPart) != 2 {
-			app.logger.Println("error :" + authHeader)
+			// app.logger.Println("error :" + authHeader)
 			app.errorJSON(w, errors.New("Invalid auth header"))
 			return
 		}
