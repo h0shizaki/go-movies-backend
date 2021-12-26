@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/graphql-go/graphql"
 )
@@ -42,6 +43,29 @@ var fields = graphql.Fields{
 		Description: "Get all movies",
 		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
 			return movies, nil
+		},
+	},
+	"search": &graphql.Field{
+		Type:        graphql.NewList(movieType),
+		Description: "Search movies by title",
+		Args: graphql.FieldConfigArgument{
+			"titleContains": &graphql.ArgumentConfig{
+				Type: graphql.String,
+			},
+		},
+		Resolve: func(params graphql.ResolveParams) (interface{}, error) {
+			var theList []*models.Movie
+			search, ok := params.Args["titleContains"].(string)
+
+			if ok {
+				for _, currentMovie := range movies {
+					if strings.Contains(currentMovie.Title, search) {
+						theList = append(theList, currentMovie)
+					}
+				}
+			}
+
+			return theList, nil
 		},
 	},
 }
@@ -90,7 +114,7 @@ func (app *application) moviesGraphQL(w http.ResponseWriter, r *http.Request) {
 	q, _ := io.ReadAll(r.Body)
 	query := string(q)
 
-	log.Println(query)
+	// log.Println(query)
 
 	rootQuery := graphql.ObjectConfig{Name: "RootQuery", Fields: fields}
 	schemaConfig := graphql.SchemaConfig{Query: graphql.NewObject(rootQuery)}
